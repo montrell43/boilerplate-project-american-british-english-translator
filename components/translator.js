@@ -10,9 +10,9 @@ class Translator {
     // Titles
     const titles = locale === 'american-to-british'
       ? americanToBritishTitles
-      : invertDict(americanToBritishTitles); // invert for British→American
+      : invertDict(americanToBritishTitles);
 
-    // Words
+    // Word dictionaries
     const americanToBritish = {
       ...americanOnly,
       ...americanToBritishSpelling
@@ -25,21 +25,25 @@ class Translator {
 
     const dict = locale === 'american-to-british' ? americanToBritish : britishToAmerican;
 
-    // Replace words/phrases (longest first)
-    for (const key of Object.keys(dict).sort((a,b) => b.length - a.length)) {
+    // Sort keys by length descending to replace longer phrases first
+    const sortedDictKeys = Object.keys(dict).sort((a, b) => b.length - a.length);
+    const sortedTitleKeys = Object.keys(titles).sort((a, b) => b.length - a.length);
+
+    // Replace titles first
+    for (const key of sortedTitleKeys) {
+      const val = titles[key];
+      const re = new RegExp(`\\b${escapeRegex(key)}(?=\\s)`, 'g');
+      translation = translation.replace(re, `<span class="highlight">${val}</span>`);
+    }
+
+    // Replace words/phrases
+    for (const key of sortedDictKeys) {
       const val = dict[key];
       const re = new RegExp(`\\b${escapeRegex(key)}\\b`, 'gi');
       translation = translation.replace(re, `<span class="highlight">${val}</span>`);
     }
 
-    // Replace titles
-    for (const key of Object.keys(titles)) {
-      const val = titles[key];
-      const re = new RegExp(`\\b${escapeRegex(key)}\\b`, 'gi');
-      translation = translation.replace(re, `<span class="highlight">${val}</span>`);
-    }
-
-    // Translate time (10:30 ↔ 10.30)
+    // Translate time formats (10:30 ↔ 10.30)
     if (locale === 'american-to-british') {
       translation = translation.replace(/(\d{1,2}):(\d{2})/g, '<span class="highlight">$1.$2</span>');
     } else {
@@ -50,18 +54,21 @@ class Translator {
     if (translation === text) return 'Everything looks good to me!';
 
     return translation;
-
-    // ===== Helper functions =====
-    function invertDict(dict) {
-      const inverted = {};
-      for (let key in dict) inverted[dict[key]] = key;
-      return inverted;
-    }
-
-    function escapeRegex(string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
   }
+}
+
+// Helper: invert dictionary
+function invertDict(dict) {
+  const inverted = {};
+  for (const key in dict) {
+    inverted[dict[key]] = key;
+  }
+  return inverted;
+}
+
+// Helper: escape special regex characters
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 module.exports = Translator;

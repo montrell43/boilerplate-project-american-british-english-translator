@@ -6,6 +6,7 @@ const assert = chai.assert;
 chai.use(chaiHttp);
 
 suite('Functional Tests', () => {
+
   test('Translation with text and locale', (done) => {
     chai.request(server)
       .post('/api/translate')
@@ -27,5 +28,44 @@ suite('Functional Tests', () => {
       });
   });
 
-  // Add remaining functional tests for missing fields, empty text, no translation
+  test('Translation with missing text field', (done) => {
+    chai.request(server)
+      .post('/api/translate')
+      .send({ locale: 'american-to-british' })
+      .end((err, res) => {
+        assert.equal(res.body.error, 'Required field(s) missing');
+        done();
+      });
+  });
+
+  test('Translation with missing locale field', (done) => {
+    chai.request(server)
+      .post('/api/translate')
+      .send({ text: 'Hello' })
+      .end((err, res) => {
+        assert.equal(res.body.error, 'Required field(s) missing');
+        done();
+      });
+  });
+
+  test('Translation with empty text', (done) => {
+    chai.request(server)
+      .post('/api/translate')
+      .send({ text: '', locale: 'american-to-british' })
+      .end((err, res) => {
+        assert.equal(res.body.error, 'No text to translate');
+        done();
+      });
+  });
+
+  test('Translation with text that needs no translation', (done) => {
+    chai.request(server)
+      .post('/api/translate')
+      .send({ text: 'Hello', locale: 'american-to-british' })
+      .end((err, res) => {
+        assert.equal(res.body.translation, 'Everything looks good to me!');
+        done();
+      });
+  });
+
 });
